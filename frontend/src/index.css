@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas-base: #060c17;
+  --color-surface-bright: #2b456b;
+  --color-surface-container-lowest: #081120;
+  --color-surface-container-low: #0e1b30;
+  --color-surface-container: #13233d;
+  --color-surface-container-high: #192d4d;
+  --color-surface-container-highest: #21395f;
+  --color-surface-deep: #0b1526;
+  --color-surface-raised: #13243f;
+  --color-surface-highlight: #1c3357;
+  --color-on-surface: #e2e8f0;
+  --color-on-surface-variant: #94a3b8;
+  --color-outline-variant: #334155;
+  --color-primary: #5eead4;
+  --color-primary-container: #14b8a6;
+  --color-on-primary-container: #022c22;
+  --color-secondary-container: #1e3a5f;
+  --color-tertiary: #fbbf24;
+  --color-tertiary-container: #d97706;
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-brand-accent: #38bdf8;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-status-success: #10b981;
+  --color-status-warning: #f59e0b;
+  --color-status-danger: #f43f5e;
+
+  --font-display-hero-mobile: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-lg: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-md: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-sm: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body-sm: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-label-md: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-label-sm: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono-data: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono-sm: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2.5rem;
+  --spacing-space-2xl: 4rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-margin: 2rem;
+}
+
+:root {
+  color-scheme: dark;
+  --brand-color: var(--color-primary-container);
+}
+
+html,
+body {
+  color: var(--color-on-surface);
+  overscroll-behavior: none;
+  background-color: var(--color-canvas-base);
+  margin: 0;
+  padding: 0;
+  color-scheme: dark;
+  accent-color: var(--brand-color);
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(20, 184, 166, 0.08), transparent 35%),
+    radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.07), transparent 35%),
+    linear-gradient(rgba(148, 163, 184, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.bg-surface-deep,
+.bg-surface-raised,
+.bg-surface-container,
+.bg-surface-container-low {
+  border: 1px solid rgba(56, 189, 248, 0.11);
+  box-shadow: 0 10px 30px -10px rgba(2, 8, 23, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+header {
+  border-bottom: 1px solid rgba(20, 184, 166, 0.18) !important;
+}
+
+aside {
+  border-right: 1px solid rgba(56, 189, 248, 0.12) !important;
+}
+
+@keyframes nodeActivePulse {
+  0%,
+  to {
+    box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.38), 0 0 22px rgba(20, 184, 166, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.72), 0 0 36px rgba(20, 184, 166, 0.48);
+  }
+}
+
+.node-active-glow {
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  animation: 1.9s ease-in-out infinite nodeActivePulse;
+}
+
+@keyframes nodeWarningPulse {
+  0%,
+  to {
+    box-shadow: 0 0 0 1px #ffc54259, 0 0 18px #ffc5422e;
+  }
+  50% {
+    box-shadow: 0 0 0 2px #ff5757a6, 0 0 30px #ff575759;
+  }
+}
+
+.node-reject-glow {
+  border: 1px solid #ff57578c;
+  animation: 1.4s ease-in-out infinite nodeWarningPulse;
+}
+
+@media (forced-colors: active) {
+  .bg-surface-deep,
+  .bg-surface-raised,
+  .bg-surface-container,
+  .bg-surface-container-low,
+  button,
+  input,
+  textarea {
+    border: 1px solid CanvasText !important;
+  }
+}
+
+@supports not (accent-color: var(--brand-color)) {
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
