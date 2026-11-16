@@ -3,18 +3,41 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import event, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
+from .compliance_ledger import (
+    ensure_compliance_tables,
+    get_observability_summary,
+    query_case_traces,
+    seed_compliance_telemetry_if_empty,
+)
 from .models import AgentAction, Base, KycCase, KycDocument
 from .schemas import AgentActionOut, CriticCheckItem, DocumentOut, KycCaseDetailOut, KycCaseOut
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./chasezero.db")
 
-engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    connect_args={"timeout": 5.0},
+)
+
+
+@event.listens_for(engine.sync_engine, "connect")
+def _set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    cursor.execute("PRAGMA synchronous=NORMAL;")
+    cursor.execute("PRAGMA foreign_keys=ON;")
+    cursor.execute("PRAGMA busy_timeout=5000;")
+    cursor.close()
+
+
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
 )
@@ -66,6 +89,11 @@ def serialize_case(c: KycCase) -> KycCaseOut:
     last_dt = c.last_contact_date
     if last_dt.tzinfo is None:
         last_dt = last_dt.replace(tzinfo=timezone.utc)
+    trace_info = query_case_traces(c.case_code)
+    total_cost = float(trace_info.get("total_cost_usd") or 0.0)
+    latest_trace_id = (
+        trace_info["traces"][0]["trace_id"] if trace_info.get("traces") else None
+    )
     return KycCaseOut(
         id=c.id,
         case_code=c.case_code,
@@ -101,6 +129,8 @@ def serialize_case(c: KycCase) -> KycCaseOut:
         documents=docs,
         missing_count=missing_count,
         verified_count=verified_count,
+        total_cost_usd=total_cost,
+        latest_trace_id=latest_trace_id,
     )
 
 
@@ -176,6 +206,9 @@ AETHELGARD_BODY = (
 async def init_db() -> int:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    ensure_compliance_tables()
+    seed_compliance_telemetry_if_empty()
 
     async with AsyncSessionLocal() as session:
         count = await session.scalar(select(func.count(KycCase.id)))

@@ -1,21 +1,29 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from .compliance_ledger import (
+    ensure_compliance_tables,
+    get_observability_summary,
+    get_rm_signing_secret,
+    get_wal_sqlite_connection,
+    query_audit_ledger,
+    query_case_traces,
+    verify_ledger_integrity,
+)
 from .database import (
     AsyncSessionLocal,
     engine,
@@ -25,7 +33,8 @@ from .database import (
     serialize_case,
     serialize_case_detail,
 )
-from .models import AgentAction, KycCase, KycDocument
+from .mcp_server import handle_mcp_http_request, mcp
+from .models import AgentAction, KycCase
 from .schemas import (
     AgentActionOut,
     ApproveDispatchRequest,
@@ -39,7 +48,14 @@ from .schemas import (
     KycCaseDetailOut,
     WorkflowRunRequest,
 )
+from .telemetry import (
+    flush_and_shutdown_telemetry,
+    init_telemetry,
+    set_execution_context,
+)
 from .workflow import (
+    ComplianceSecurityError,
+    approve_and_dispatch_chase_workflow,
     build_grounded_draft,
     evaluate_critic_checks,
     execute_langgraph_pipeline,
@@ -50,15 +66,20 @@ from .workflow import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    init_telemetry()
     await init_db()
     yield
+    flush_and_shutdown_telemetry()
     await engine.dispose()
 
 
 app = FastAPI(
     title="Northgate ChaseZero API",
-    description="Multi-agent KYC document chasing backend powered by LangGraph & Async SQLAlchemy 2.0",
-    version="0.1.0",
+    description=(
+        "Autonomous Institutional KYC Command Center — FastAPI + LangGraph + FastMCP v3 "
+        "+ OpenTelemetry GenAI + Tamper-Evident SEC/FinCEN Audit Ledger"
+    ),
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -71,30 +92,134 @@ app.add_middleware(
 )
 
 
-async def load_case_or_404(session: AsyncSession, case_id: int) -> KycCase:
-    stmt = (
-        select(KycCase)
-        .where(KycCase.id == case_id)
-        .options(selectinload(KycCase.documents), selectinload(KycCase.actions))
+async def load_case_or_404(session: AsyncSession, case_id: int | str) -> KycCase:
+    raw = str(case_id).strip()
+    stmt = select(KycCase).options(
+        selectinload(KycCase.documents), selectinload(KycCase.actions)
     )
+    if raw.isdigit():
+        stmt = stmt.where(KycCase.id == int(raw))
+    else:
+        stmt = stmt.where(KycCase.case_code == raw)
     case = (await session.execute(stmt)).scalar_one_or_none()
     if not case:
-        raise HTTPException(status_code=404, detail=f"KYC Case #{case_id} not found")
+        raise HTTPException(status_code=404, detail=f"KYC Case '{case_id}' not found")
     return case
+
+
+# ==============================================================================
+# Production Cloud Run Health & Readiness Probes + FastMCP /mcp Endpoint
+# ==============================================================================
+
+
+@app.get("/healthz", summary="Cloud Run Liveness Probe", operation_id="cloud_run_liveness_probe")
+@app.get("/readyz", summary="Cloud Run Readiness Probe", operation_id="cloud_run_readiness_probe")
+async def cloud_run_health_probe() -> JSONResponse:
+    """
+    Checks SQLite WAL mode writeability and SEC/FinCEN audit ledger cryptographic hash integrity.
+    """
+    ensure_compliance_tables()
+    conn = get_wal_sqlite_connection()
+    try:
+        journal_mode = str(conn.execute("PRAGMA journal_mode;").fetchone()[0]).lower()
+        busy_timeout = int(conn.execute("PRAGMA busy_timeout;").fetchone()[0])
+    finally:
+        conn.close()
+
+    integrity = verify_ledger_integrity()
+    healthy = journal_mode == "wal" and integrity["valid"]
+    status_code = 200 if healthy else 503
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "healthy" if healthy else "degraded",
+            "service": "northgate-chasezero",
+            "version": "2.0.0",
+            "sqlite_journal_mode": journal_mode,
+            "sqlite_busy_timeout_ms": busy_timeout,
+            "ledger_integrity": integrity,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+@app.api_route("/mcp", methods=["GET", "POST"], summary="FastMCP v3 Streamable HTTP Endpoint", operation_id="fastmcp_streamable_http_root")
+@app.api_route("/mcp/", methods=["GET", "POST"], include_in_schema=False, operation_id="fastmcp_streamable_http_slash")
+async def fastmcp_streamable_http_endpoint(request: Request) -> JSONResponse:
+    body_bytes = await request.body() if request.method.upper() == "POST" else b""
+    status_code, response_payload = await handle_mcp_http_request(
+        method=request.method,
+        headers=dict(request.headers),
+        body_bytes=body_bytes,
+    )
+    return JSONResponse(status_code=status_code, content=response_payload)
+
+
+# ==============================================================================
+# Observability, Trace Waterfall & Tamper-Evident Audit Ledger Endpoints
+# ==============================================================================
+
+
+@app.get("/api/observability/summary", summary="Global OTel GenAI & Cost Summary")
+async def api_observability_summary() -> Dict[str, Any]:
+    return get_observability_summary()
+
+
+@app.get(
+    "/api/observability/traces/{case_id}",
+    summary="Per-Case OTel GenAI Trace Waterfall & Cost Attribution",
+)
+async def api_case_observability_traces(
+    case_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    case = await load_case_or_404(session, case_id)
+    return query_case_traces(case.case_code)
+
+
+@app.get(
+    "/api/audit/ledger",
+    summary="Tamper-Evident SEC & FinCEN Hash-Chained Audit Ledger",
+)
+async def api_audit_ledger(
+    case_id: Optional[str] = Query(None, description="Optional case code filter (e.g. NCZ-2024-8841) or numeric ID"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    session: AsyncSession = Depends(get_session),
+) -> Dict[str, Any]:
+    resolved_code: Optional[str] = None
+    if case_id:
+        raw = case_id.strip()
+        if raw.isdigit():
+            c = await load_case_or_404(session, int(raw))
+            resolved_code = c.case_code
+        else:
+            resolved_code = raw
+    return query_audit_ledger(case_id=resolved_code, limit=limit, offset=offset)
+
+
+# ==============================================================================
+# Core Application REST & SSE Endpoints
+# ==============================================================================
 
 
 @app.get("/api/health", summary="Health Check")
 async def health_check(session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     count = await session.scalar(select(func.count(KycCase.id))) or 0
     cfg = get_llm_config()
+    integrity = verify_ledger_integrity()
     return {
         "status": "ok",
         "service": "chasezero-backend",
+        "version": "2.0.0",
         "cases_loaded": str(count),
         "llm_configured": cfg["llm_configured"],
         "llm_provider": cfg["llm_provider"],
         "llm_model": cfg["llm_model"],
         "env_file": cfg["env_file"],
+        "ledger_integrity_valid": integrity["valid"],
+        "ledger_verified_records": integrity["verified_records"],
     }
 
 
@@ -134,6 +259,7 @@ async def list_cases(
         sum(c.days_since_contact for c in all_cases) / max(1, len(all_cases)) + 0.8, 1
     )
     buffer_health = round(100.0 - (sla_breached_count * 1.2), 1)
+    obs = get_observability_summary()
 
     filtered = all_cases
     q = search.strip().lower()
@@ -163,6 +289,10 @@ async def list_cases(
         completed_count=completed_count,
         avg_chase_latency_days=avg_latency,
         sla_buffer_health_pct=buffer_health,
+        total_spend_usd=obs["total_spend_usd"],
+        avg_cost_per_chase_usd=obs["avg_cost_per_chase_usd"],
+        ledger_integrity_valid=obs["ledger_integrity_valid"],
+        ledger_verified_records=obs["ledger_verified_records"],
     )
 
 
@@ -172,7 +302,7 @@ async def list_cases(
     summary="Get Case Detail",
 )
 async def get_case_detail(
-    case_id: int, session: AsyncSession = Depends(get_session)
+    case_id: str, session: AsyncSession = Depends(get_session)
 ) -> KycCaseDetailOut:
     case = await load_case_or_404(session, case_id)
     return serialize_case_detail(case)
@@ -213,6 +343,11 @@ async def stream_workflow(
     async def event_generator() -> AsyncGenerator[str, None]:
         async with AsyncSessionLocal() as session:
             try:
+                set_execution_context(
+                    actor_id="Sarah Jenkins (VP Corporate Banking)",
+                    actor_role="RM_APPROVER",
+                    entry_channel="WEB_CONSOLE",
+                )
                 case = await load_case_or_404(session, case_id)
                 refreshed_case, events = await execute_langgraph_pipeline(
                     session=session,
@@ -259,16 +394,22 @@ async def stream_workflow(
     description="REST endpoint executing the full LangGraph StateGraph and returning the updated case.",
 )
 async def run_workflow_sync(
-    case_id: int,
+    case_id: str,
     payload: WorkflowRunRequest,
     session: AsyncSession = Depends(get_session),
 ) -> KycCaseDetailOut:
+    set_execution_context(
+        actor_id="Sarah Jenkins (VP Corporate Banking)",
+        actor_role="RM_APPROVER",
+        entry_channel="WEB_CONSOLE",
+    )
     case = await load_case_or_404(session, case_id)
     refreshed_case, _ = await execute_langgraph_pipeline(
         session=session,
         case=case,
         simulate_critic_rejection=payload.simulate_critic_rejection,
         tone=payload.tone,
+        force_circuit_breaker=payload.force_circuit_breaker,
     )
     return serialize_case_detail(refreshed_case)
 
@@ -352,52 +493,54 @@ async def adjust_draft_tone(
 @app.post(
     "/api/cases/{case_id}/approve",
     response_model=ApproveDispatchResponse,
-    summary="Approve And Send",
-    description="HITL Gate: RM approves & sends finalized chase email, updating SQLite & telemetry.",
+    summary="Approve And Send (Cryptographic SEC/FinCEN HITL Gate)",
+    description=(
+        "Connects the UI Human-in-the-Loop Review sign-off directly to the cryptographic "
+        "approve_and_dispatch_chase workflow (HMAC-SHA256 signature + tamper-evident audit ledger)."
+    ),
 )
 async def approve_and_send(
-    case_id: int,
+    case_id: str,
     payload: ApproveDispatchRequest,
     session: AsyncSession = Depends(get_session),
 ) -> ApproveDispatchResponse:
     case = await load_case_or_404(session, case_id)
-    now = datetime.now(timezone.utc)
-
-    case.current_draft_subject = payload.subject
-    case.current_draft_body = payload.body
-    case.status = "Completed"
-    case.sla_breached = False
-    case.sla_delay_days = 0.0
-    case.last_contact_date = now
-    case.days_since_contact = 0.0
-    case.chase_round_count = case.chase_round_count + 1
-    case.critic_passed = True
-    case.critic_score = 100
-
-    digest = hashlib.sha256(
-        f"{case.case_code}:{payload.subject}:{payload.body}:{now.isoformat()}".encode("utf-8")
-    ).hexdigest()[:12]
-    case.audit_hash = digest
-    tracking_id = f"NCZ-MSG-{digest[:8].upper()}"
-
-    analyst_note = " | Analyst notified" if payload.notify_analyst else ""
-    session.add(
-        AgentAction(
-            case_id=case.id,
-            action_type="RM_Approved",
-            timestamp=now,
-            actor=f"{payload.actor} (RM)",
-            details=f"RM authorized & dispatched chase round #{case.chase_round_count} to {case.contact_email} | Hash {digest[:8]}{analyst_note}",
-        )
+    rm_id = payload.rm_id or payload.actor or "Sarah Jenkins (VP Corporate Banking)"
+    provided_secret = (
+        payload.rm_approval_secret
+        if payload.rm_approval_secret is not None
+        else get_rm_signing_secret()
     )
+    edited_body = payload.edited_body
+    if edited_body is None and payload.body and payload.body != case.current_draft_body:
+        edited_body = payload.body
 
-    await session.commit()
-    refreshed = await load_case_or_404(session, case_id)
+    try:
+        receipt = await approve_and_dispatch_chase_workflow(
+            session=session,
+            case=case,
+            rm_id=rm_id,
+            rm_approval_secret=provided_secret,
+            edited_body=edited_body,
+            subject_override=payload.subject,
+            notify_analyst=payload.notify_analyst,
+            entry_channel="WEB_CONSOLE",
+        )
+    except ComplianceSecurityError as sec_err:
+        raise HTTPException(status_code=403, detail=str(sec_err))
+
+    refreshed = receipt["case"]
     return ApproveDispatchResponse(
-        case=serialize_case_detail(refreshed),
-        tracking_id=tracking_id,
-        audit_hash=digest,
-        message=f"Outbound KYC chase round #{refreshed.chase_round_count} securely transmitted to {refreshed.contact_name} ({refreshed.contact_email}).",
+        case=receipt["case_serialized"],
+        tracking_id=receipt["tracking_id"],
+        audit_hash=receipt["record_hash"][:16],
+        audit_id=receipt["audit_id"],
+        trace_id=receipt["trace_id"],
+        hitl_signature=receipt["hitl_signature"],
+        message=(
+            f"Outbound KYC chase round #{refreshed.chase_round_count} securely transmitted to "
+            f"{refreshed.contact_name} ({refreshed.contact_email}) | HMAC Sig {receipt['hitl_signature'][:12]}..."
+        ),
     )
 
 
@@ -476,7 +619,7 @@ async def list_agent_actions(
     "/api/dashboard/metrics",
     response_model=DashboardMetricsOut,
     summary="Get Dashboard Metrics",
-    description="Calculate COO Success Dashboard metrics directly from agent_actions & kyc_cases.",
+    description="Calculate COO Success Dashboard metrics directly from agent_actions, kyc_cases & OTel cost ledger.",
 )
 async def get_dashboard_metrics(
     session: AsyncSession = Depends(get_session),
@@ -545,6 +688,7 @@ async def get_dashboard_metrics(
         .limit(15)
     )
     recent_rows = list((await session.execute(recent_stmt)).scalars().all())
+    obs = get_observability_summary()
 
     desks = [
         DeskMetric(
@@ -593,9 +737,17 @@ async def get_dashboard_metrics(
         baseline_unresponsive_pct=68.0,
         pilot_unresponsive_pct=round(max(4.0, 9.0 - extra_reduction * 8), 1),
         escalations_avoided=236 + max(0, total_approved - 18),
+        total_spend_usd=obs["total_spend_usd"],
+        avg_cost_per_chase_usd=obs["avg_cost_per_chase_usd"],
+        ledger_integrity_valid=obs["ledger_integrity_valid"],
+        ledger_verified_records=obs["ledger_verified_records"],
         desks=desks,
         recent_actions=[serialize_action(a) for a in recent_rows],
-        extra={"live_breached_cases": live_breached, "total_db_cases": total_cases},
+        extra={
+            "live_breached_cases": live_breached,
+            "total_db_cases": total_cases,
+            "observability": obs,
+        },
     )
 
 

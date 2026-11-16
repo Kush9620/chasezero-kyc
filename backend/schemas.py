@@ -73,6 +73,8 @@ class KycCaseOut(BaseModel):
     documents: List[DocumentOut] = Field(default_factory=list)
     missing_count: int = 0
     verified_count: int = 0
+    total_cost_usd: float = 0.0
+    latest_trace_id: Optional[str] = None
 
 
 class KycCaseDetailOut(KycCaseOut):
@@ -87,11 +89,16 @@ class CasesSummaryOut(BaseModel):
     completed_count: int
     avg_chase_latency_days: float
     sla_buffer_health_pct: float
+    total_spend_usd: float = 0.0
+    avg_cost_per_chase_usd: float = 0.0
+    ledger_integrity_valid: bool = True
+    ledger_verified_records: int = 0
 
 
 class WorkflowRunRequest(BaseModel):
     simulate_critic_rejection: bool = False
     tone: str = "institutional"
+    force_circuit_breaker: bool = False
 
 
 class CriticRescanRequest(BaseModel):
@@ -105,10 +112,13 @@ class DraftToneRequest(BaseModel):
 
 
 class ApproveDispatchRequest(BaseModel):
-    subject: str
-    body: str
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    edited_body: Optional[str] = None
     notify_analyst: bool = True
-    actor: str = "Sarah Jenkins"
+    actor: str = "Sarah Jenkins (VP Corporate Banking)"
+    rm_id: Optional[str] = None
+    rm_approval_secret: Optional[str] = None
     cc_emails: List[str] = Field(default_factory=list)
 
 
@@ -116,6 +126,9 @@ class ApproveDispatchResponse(BaseModel):
     case: KycCaseDetailOut
     tracking_id: str
     audit_hash: str
+    audit_id: Optional[str] = None
+    trace_id: Optional[str] = None
+    hitl_signature: Optional[str] = None
     message: str
 
 
@@ -154,6 +167,10 @@ class DashboardMetricsOut(BaseModel):
     baseline_unresponsive_pct: float
     pilot_unresponsive_pct: float
     escalations_avoided: int
+    total_spend_usd: float = 0.0
+    avg_cost_per_chase_usd: float = 0.0
+    ledger_integrity_valid: bool = True
+    ledger_verified_records: int = 0
     desks: List[DeskMetric]
     recent_actions: List[AgentActionOut]
     extra: Dict[str, Any] = Field(default_factory=dict)
