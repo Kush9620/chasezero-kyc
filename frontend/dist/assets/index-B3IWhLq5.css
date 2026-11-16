@@ -9,20 +9,13 @@
 html,
 body {
   color: var(--color-on-surface);
-  background-color: var(--color-canvas-base);
+  background-color: #f8fafc;
   color-scheme: light;
   accent-color: var(--brand-color);
-  background-image:
-    radial-gradient(circle at 10% 5%, rgba(37, 99, 235, 0.07), transparent 40%),
-    radial-gradient(circle at 90% 10%, rgba(13, 148, 136, 0.07), transparent 40%),
-    radial-gradient(circle at 50% 90%, rgba(37, 99, 235, 0.04), transparent 45%),
-    linear-gradient(rgba(15, 23, 42, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.028) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-  background-attachment: fixed;
+  background-image: none;
 }
 
-/* Crisp white & slate layered cards with refined daylight elevation */
+/* Crisp white & slate layered cards with clean presentation styling */
 .bg-surface-deep,
 .bg-surface-deep\/95,
 .bg-surface-deep\/90,
@@ -30,10 +23,8 @@ body {
 .bg-surface-deep\/70,
 .bg-surface-deep\/60 {
   background-color: #ffffff !important;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow:
-    0 4px 20px -2px rgba(15, 23, 42, 0.05),
-    0 1px 3px 0 rgba(15, 23, 42, 0.03);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .bg-surface-raised,
@@ -157,13 +148,13 @@ textarea:focus {
   box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.10), 0 2px 6px -1px rgba(15, 23, 42, 0.05) !important;
 }
 
-/* Subtle ambient glow orbs in light mode */
+/* Hide decorative background blur orbs for a clean presentation look */
 .blur-\[80px\],
 .blur-\[90px\],
 .blur-\[100px\],
 .blur-3xl,
 .blur-2xl {
-  opacity: 0.25 !important;
+  display: none !important;
 }
 
 /* Active LangGraph Node Pulse in Light Mode */
