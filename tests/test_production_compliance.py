@@ -99,7 +99,8 @@ async def test_2_trace_and_cost_unification_via_mcp_http():
        - Verifies the Retry-Loop Circuit Breaker (max_critic_retries = 3) when persistent Critic
          rejections occur.
     """
-    custom_trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+    import os
+    custom_trace_id = os.urandom(16).hex()
     traceparent = f"00-{custom_trace_id}-00f067aa0ba902b7-01"
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -265,3 +266,81 @@ async def test_5_cloud_run_health_probes_and_observability_endpoints():
         r_ledger = await client.get("/api/audit/ledger?case_id=NCZ-2024-8841")
         assert r_ledger.status_code == 200
         assert r_ledger.json()["integrity"]["valid"] is True
+
+
+@pytest.mark.asyncio
+async def test_6_all_ui_buttons_and_interactive_endpoints():
+    """
+    6. End-to-End UI Button Verification:
+       Verifies that every interactive button in the Web UI works on any selected case:
+       - Document status toggle (/api/cases/1/documents/1/toggle)
+       - RM Note save (/api/cases/1/note)
+       - Quick Tone Adjusters (/api/cases/1/draft/tone: casual, urgent, calendar, baseline)
+       - Critic Compliance QA Simulate Failure & Re-scan (/api/cases/1/critic/rescan)
+       - Live SSE Workflow Stream (/api/cases/1/workflow/stream)
+       - Human-in-the-Loop Approve & Send (/api/cases/1/approve) even without running workflow first
+       - Reset Case for Demo (/api/cases/1/reset)
+    """
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # 1. Reset case 1 to Missing_Docs
+        r_reset = await client.post("/api/cases/1/reset")
+        assert r_reset.status_code == 200
+        assert r_reset.json()["status"] == "Missing_Docs"
+        assert r_reset.json()["current_draft_body"] is not None
+
+        # 2. Directly click "Approve & Send Chase Email" from UI on Case 1 (without running workflow first)
+        r_approve_direct = await client.post(
+            "/api/cases/1/approve",
+            json={
+                "subject": "Urgent KYC Follow-Up",
+                "body": "Dear Alistair, Please upload the missing KYC documents.",
+                "notify_analyst": True,
+                "actor": "Sarah Jenkins",
+            },
+        )
+        assert r_approve_direct.status_code == 200, r_approve_direct.text
+        assert r_approve_direct.json()["case"]["status"] == "Completed"
+        assert r_approve_direct.json()["tracking_id"].startswith("NCZ-MSG-")
+
+        # 3. Reset case 1 again and test Tone Adjusters
+        await client.post("/api/cases/1/reset")
+        for tone in ("casual", "urgent", "calendar", "baseline"):
+            r_tone = await client.post("/api/cases/1/draft/tone", json={"tone": tone})
+            assert r_tone.status_code == 200
+            assert r_tone.json()["status"] == "Draft_Ready"
+
+        # 4. Test Critic Simulate Policy Violation & Re-run Critic Scan
+        r_fail = await client.post(
+            "/api/cases/1/critic/rescan", json={"simulate_failure": True}
+        )
+        assert r_fail.status_code == 200
+        assert r_fail.json()["critic_passed"] is False
+
+        r_pass = await client.post(
+            "/api/cases/1/critic/rescan", json={"simulate_failure": False}
+        )
+        assert r_pass.status_code == 200
+        assert r_pass.json()["critic_passed"] is True
+        assert r_pass.json()["status"] == "Draft_Ready"
+
+        # 5. Test Document Toggle & RM Note Update
+        r_doc = await client.post("/api/cases/1/documents/1/toggle")
+        assert r_doc.status_code == 200
+        await client.post("/api/cases/1/documents/1/toggle")
+        await client.post("/api/cases/1/documents/1/toggle")
+
+        r_note = await client.patch(
+            "/api/cases/1/note",
+            json={"relationship_notes": "Updated RM presentation note for Apex Global."},
+        )
+        assert r_note.status_code == 200
+
+        # 6. Test SSE Workflow Stream
+        r_stream = await client.get(
+            "/api/cases/1/workflow/stream?simulate_critic_rejection=true&tone=institutional"
+        )
+        assert r_stream.status_code == 200
+        assert "workflow_complete" in r_stream.text
+
+        # Leave case 1 in clean demo state
+        await client.post("/api/cases/1/reset")

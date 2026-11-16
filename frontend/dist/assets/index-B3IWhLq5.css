@@ -97,20 +97,16 @@ aside nav button:not([aria-current="page"]):hover {
 
 button.bg-primary-container,
 button.bg-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 60%, #0f766e 100%) !important;
+  background: #2563eb !important;
   color: #ffffff !important;
-  border: 1px solid rgba(29, 78, 216, 0.3) !important;
-  box-shadow:
-    0 6px 18px -4px rgba(37, 99, 235, 0.40),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid #1d4ed8 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
 }
 
 button.bg-primary-container:hover,
 button.bg-primary:hover {
-  box-shadow:
-    0 10px 24px -4px rgba(37, 99, 235, 0.52),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.35) !important;
-  filter: brightness(1.05);
+  background: #1d4ed8 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
 }
 
 /* Inputs & Search Bar Crisp Borders */

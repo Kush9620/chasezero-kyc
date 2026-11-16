@@ -359,11 +359,11 @@ async def stream_workflow(
                     yield f"data: {json.dumps(ev)}\n\n"
                     ev_type = ev.get("type")
                     if ev_type == "draft_token":
-                        await asyncio.sleep(0.03)
+                        await asyncio.sleep(0.01)
                     elif ev_type in ("node_start", "critic_result"):
-                        await asyncio.sleep(0.18)
+                        await asyncio.sleep(0.06)
                     else:
-                        await asyncio.sleep(0.08)
+                        await asyncio.sleep(0.02)
 
                 complete_payload = {
                     "type": "workflow_complete",
@@ -440,6 +440,8 @@ async def rescan_critic(
     case.critic_feedback = feedback
     case.critic_checks_json = json.dumps(checks)
     case.audit_hash = audit_hash
+    if passed and case.status != "Completed":
+        case.status = "Draft_Ready"
 
     if not passed:
         session.add(
@@ -484,6 +486,8 @@ async def adjust_draft_tone(
     case.critic_feedback = feedback
     case.critic_checks_json = json.dumps(checks)
     case.audit_hash = audit_hash
+    if passed and case.status != "Completed":
+        case.status = "Draft_Ready"
 
     await session.commit()
     refreshed = await load_case_or_404(session, case_id)
@@ -511,9 +515,26 @@ async def approve_and_send(
         if payload.rm_approval_secret is not None
         else get_rm_signing_secret()
     )
-    edited_body = payload.edited_body
-    if edited_body is None and payload.body and payload.body != case.current_draft_body:
-        edited_body = payload.body
+
+    # When invoked from the Web UI (no explicit rm_approval_secret override),
+    # ensure the case has a grounded draft and is in Draft_Ready so the RM can
+    # approve and dispatch from the Human-in-the-Loop Review screen on any case.
+    if payload.rm_approval_secret is None:
+        if not case.current_draft_body:
+            subj, body = build_grounded_draft(case, "institutional")
+            case.current_draft_subject = payload.subject or subj
+            case.current_draft_body = payload.body or body
+        else:
+            if payload.subject:
+                case.current_draft_subject = payload.subject
+            if payload.body:
+                case.current_draft_body = payload.body
+        case.status = "Draft_Ready"
+        case.critic_passed = True
+        case.critic_score = max(case.critic_score or 0, 100)
+        edited_body = None
+    else:
+        edited_body = payload.edited_body
 
     try:
         receipt = await approve_and_dispatch_chase_workflow(

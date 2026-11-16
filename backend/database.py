@@ -94,6 +94,37 @@ def serialize_case(c: KycCase) -> KycCaseOut:
     latest_trace_id = (
         trace_info["traces"][0]["trace_id"] if trace_info.get("traces") else None
     )
+
+    draft_subject = c.current_draft_subject
+    draft_body = c.current_draft_body
+    if not draft_body:
+        first_name = (c.contact_name or "Client").split(" ")[0]
+        missing_docs = [d for d in docs if d.status == "Missing"]
+        doc_lines = "\n".join(
+            f"{idx}. {d.document_name} — {d.description}"
+            for idx, d in enumerate(missing_docs, start=1)
+        ) or "1. Periodic Corporate KYC Confirmation"
+        draft_subject = (
+            draft_subject
+            or f"Action Required: Finalizing KYC Documentation for {c.client_name} (Ref #{c.case_code})"
+        )
+        draft_body = (
+            f"Dear {first_name},\n\n"
+            f"Thank you for your partnership on {c.client_name}'s corporate institutional onboarding ({c.facility_value} facility). "
+            f"To ensure we support your anticipated execution schedule ahead of {c.target_deadline_label} without delay, "
+            f"we kindly request the following {len(missing_docs) or 1} outstanding document(s):\n\n"
+            f"{doc_lines}\n\n"
+            f"Please transmit these files strictly via your encrypted Northgate Secure Client Workspace link: "
+            f"https://portal.northgatebank.com/secure-vault/{c.case_code.lower()}\n\n"
+            f"Warm regards,\n"
+            f"{c.assigned_rm}\n"
+            f"VP, Corporate Banking Relationship Management\n"
+            f"Northgate Commercial & Institutional Banking\n\n"
+            f"CONFIDENTIALITY & COMPLIANCE NOTICE: This communication is issued pursuant to Northgate Risk & Settlement Protocols. "
+            f"It does not constitute a legally binding loan commitment or final credit approval. "
+            f"Northgate Bank plc is authorized and regulated by the PRA and FCA."
+        )
+
     return KycCaseOut(
         id=c.id,
         case_code=c.case_code,
@@ -118,8 +149,8 @@ def serialize_case(c: KycCase) -> KycCaseOut:
         facility_value=c.facility_value,
         relationship_notes=c.relationship_notes,
         target_deadline_label=c.target_deadline_label,
-        current_draft_subject=c.current_draft_subject,
-        current_draft_body=c.current_draft_body,
+        current_draft_subject=draft_subject,
+        current_draft_body=draft_body,
         critic_passed=c.critic_passed,
         critic_score=c.critic_score,
         critic_feedback=c.critic_feedback,

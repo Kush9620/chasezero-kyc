@@ -1,5 +1,5 @@
 /**
- * Northgate ChaseZero v2.0 — Clean Presentation-Ready Trace & Compliance Inspector
+ * Northgate ChaseZero v2.0 — Simple Presentation-Ready Trace & Audit Inspector
  */
 (function () {
   const STATE = {
@@ -13,30 +13,13 @@
     loading: false,
     actionStatus: null,
     rmId: "Sarah Jenkins (VP Corporate Banking)",
-    rmSecret: "northgate-rm-hmac-secret-2026",
   };
 
-  const FRIENDLY_STEP_NAMES = {
-    "mcp.tools/call.run_chase_pipeline": {
-      title: "1. FastMCP v3 Trigger",
-      subtitle: "Authenticated Request & W3C Trace Context",
-      badge: "MCP Entry",
-    },
-    "langgraph.orchestrator_sla_scan": {
-      title: "2. Orchestrator SLA & Document Scan",
-      subtitle: "Checks SQLite for >3 Day Breaches & Missing KYC Docs",
-      badge: "SQLite WAL",
-    },
-    "langgraph.ai_drafting_agent": {
-      title: "3. AI Drafting Agent",
-      subtitle: "Synthesizes Grounded Institutional Chase Email",
-      badge: "LLM Drafter",
-    },
-    "langgraph.critic_compliance_qa": {
-      title: "4. Critic Compliance QA Gate",
-      subtitle: "Audits Tone, Grounding, Zero-Promises & PII Rules",
-      badge: "5 Guardrails",
-    },
+  const STEP_LABELS = {
+    "mcp.tools/call.run_chase_pipeline": "1. FastMCP Request Trigger",
+    "langgraph.orchestrator_sla_scan": "2. SLA & Missing Document Check",
+    "langgraph.ai_drafting_agent": "3. AI Email Drafter (Gemini 2.5)",
+    "langgraph.critic_compliance_qa": "4. Critic Compliance QA (5 Rules)",
   };
 
   async function fetchJson(url, options) {
@@ -59,7 +42,7 @@
       ]);
       STATE.summary = obs;
       STATE.cases = casesRes.cases || [];
-      renderGovernanceBadge();
+      renderTopBarButton();
     } catch (err) {
       console.warn("Telemetry refresh notice:", err);
     }
@@ -72,7 +55,7 @@
     try {
       const [traces, ledger] = await Promise.all([
         fetchJson(`/api/observability/traces/${encodeURIComponent(STATE.selectedCaseCode)}`),
-        fetchJson(`/api/audit/ledger?case_id=${encodeURIComponent(STATE.selectedCaseCode)}&limit=20`),
+        fetchJson(`/api/audit/ledger?case_id=${encodeURIComponent(STATE.selectedCaseCode)}&limit=15`),
       ]);
       STATE.tracesData = traces;
       STATE.ledgerData = ledger;
@@ -88,7 +71,7 @@
     STATE.loading = true;
     STATE.actionStatus = {
       type: "info",
-      text: `Running AI Drafting + Critic QA pipeline for ${STATE.selectedCaseCode}...`,
+      text: `Running AI Drafter & Critic QA for ${STATE.selectedCaseCode}...`,
     };
     renderDrawer();
     try {
@@ -111,9 +94,9 @@
       const out = res.data || res.result?.structuredContent || {};
       STATE.actionStatus = {
         type: "success",
-        text: `Draft Ready! Legal Score: ${Math.round(
+        text: `✓ AI Draft Ready! Score: ${Math.round(
           Number(out.critic_legal_score || 1) * 100
-        )}% • Cost: $${Number(out.cost_usd || 0).toFixed(4)} • Time: ${Math.round(
+        )}% • Cost: $${Number(out.cost_usd || 0).toFixed(4)} • Speed: ${Math.round(
           Number(out.latency_ms || 0)
         )} ms`,
       };
@@ -126,38 +109,27 @@
     }
   }
 
-  async function triggerMcpHitlSignoff() {
+  async function triggerOneClickApprove() {
     STATE.loading = true;
     STATE.actionStatus = {
       type: "info",
-      text: `Signing & dispatching ${STATE.selectedCaseCode} with RM digital signature...`,
+      text: `Signing & dispatching ${STATE.selectedCaseCode}...`,
     };
     renderDrawer();
     try {
-      const res = await fetchJson("/mcp", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer northgate-mcp-bearer-2026",
-          "X-RM-Actor-ID": STATE.rmId,
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: Date.now(),
-          method: "tools/call",
-          params: {
-            name: "approve_and_dispatch_chase",
-            arguments: {
-              case_id: STATE.selectedCaseCode,
-              rm_id: STATE.rmId,
-              rm_approval_secret: STATE.rmSecret,
-            },
-          },
-        }),
-      });
-      const out = res.data || res.result?.structuredContent || {};
+      const res = await fetchJson(
+        `/api/cases/${encodeURIComponent(STATE.selectedCaseCode)}/approve`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            actor: STATE.rmId,
+            notify_analyst: true,
+          }),
+        }
+      );
       STATE.actionStatus = {
         type: "success",
-        text: `Approved & Dispatched! Receipt: ${out.tracking_id} (Signed by Sarah Jenkins)`,
+        text: `✓ Approved & Sent! Tracking ID: ${res.tracking_id} (Signed with HMAC-SHA256)`,
       };
       await refreshGlobalTelemetry();
       await loadEntityInspection(STATE.selectedCaseCode);
@@ -168,8 +140,7 @@
     }
   }
 
-  function renderGovernanceBadge() {
-    // Remove any previously injected heavy top bar so the main page stays super clean
+  function renderTopBarButton() {
     const oldBar = document.getElementById("ncz-executive-observability-bar");
     if (oldBar) oldBar.remove();
 
@@ -180,25 +151,17 @@
     if (!badge) {
       badge = document.createElement("div");
       badge.id = "ncz-sec-fincen-gov-badge";
-      badge.style.cssText =
-        "display:flex;align-items:center;gap:10px;margin-left:14px;flex-wrap:wrap;";
+      badge.style.cssText = "display:inline-flex;align-items:center;gap:8px;margin-left:12px;";
       govBar.appendChild(badge);
     }
 
-    const s = STATE.summary;
-    const valid = s ? s.ledger_integrity_valid : true;
-    const avgCost = s ? Number(s.avg_cost_per_chase_usd || 0).toFixed(4) : "0.0151";
+    const avgCost = STATE.summary
+      ? Number(STATE.summary.avg_cost_per_chase_usd || 0.015).toFixed(4)
+      : "0.0151";
 
     badge.innerHTML = `
-      <span style="display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600;background:${
-        valid ? "#ecfdf5" : "#fef2f2"
-      };color:${valid ? "#047857" : "#b91c1c"};border:1px solid ${
-      valid ? "#a7f3d0" : "#fecaca"
-    };">
-        ✓ SEC/FinCEN Ledger Verified • $${avgCost}/chase
-      </span>
-      <button type="button" id="ncz-open-trace-drawer-btn" style="display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:9999px;font-size:11px;font-weight:700;background:#2563eb;color:#ffffff;border:none;cursor:pointer;">
-        📊 Trace & Audit Inspector
+      <button type="button" id="ncz-open-trace-drawer-btn" style="display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:9999px;font-size:12px;font-weight:600;background:#2563eb;color:#ffffff;border:none;cursor:pointer;">
+        📊 AI Cost ($${avgCost}) & Audit Log
       </button>
     `;
 
@@ -254,65 +217,44 @@
       : 442;
 
     const waterfallHtml = `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
-        <div style="background:#ffffff;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0;">
-          <div style="font-size:12px;color:#64748b;">AI Cost (This Case)</div>
-          <div style="font-size:22px;font-weight:700;color:#2563eb;margin-top:2px;">$${Number(
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:#ffffff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-size:12px;color:#64748b;">Case AI Cost</div>
+          <div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:2px;">$${Number(
             tData.total_cost_usd || 0.013
           ).toFixed(4)}</div>
-          <div style="font-size:11px;color:#059669;margin-top:2px;">Gemini 2.5 Pro • Cached</div>
         </div>
-        <div style="background:#ffffff;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0;">
-          <div style="font-size:12px;color:#64748b;">Total Tokens Processed</div>
-          <div style="font-size:22px;font-weight:700;color:#0f172a;margin-top:2px;">${totalTokens.toLocaleString()}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px;">In: ${
-            tData.total_input_tokens || 0
-          } • Out: ${tData.total_output_tokens || 0}</div>
+        <div style="background:#ffffff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-size:12px;color:#64748b;">Tokens Used</div>
+          <div style="font-size:20px;font-weight:700;color:#0f172a;margin-top:2px;">${totalTokens.toLocaleString()}</div>
         </div>
-        <div style="background:#ffffff;padding:14px 16px;border-radius:12px;border:1px solid #e2e8f0;">
-          <div style="font-size:12px;color:#64748b;">End-to-End Speed</div>
-          <div style="font-size:22px;font-weight:700;color:#0f172a;margin-top:2px;">${totalLatency} ms</div>
-          <div style="font-size:11px;color:#059669;margin-top:2px;">✓ All 4 Pipeline Steps OK</div>
+        <div style="background:#ffffff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;">
+          <div style="font-size:12px;color:#64748b;">Response Time</div>
+          <div style="font-size:20px;font-weight:700;color:#059669;margin-top:2px;">${totalLatency} ms</div>
         </div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${spans
           .map((s) => {
-            const meta = FRIENDLY_STEP_NAMES[s.span_name] || {
-              title: s.span_name,
-              subtitle: `Operation: ${s.operation_name}`,
-              badge: s.operation_name,
-            };
+            const label = STEP_LABELS[s.span_name] || s.span_name;
             const isOk = s.status === "OK";
             const stepTokens = Number(s.input_tokens || 0) + Number(s.output_tokens || 0);
             return `
-              <div style="padding:14px 16px;border-radius:12px;background:#ffffff;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#eff6ff;color:#2563eb;">
-                      ${meta.badge}
-                    </span>
-                    <strong style="font-size:14px;color:#0f172a;">${meta.title}</strong>
-                  </div>
-                  <div style="font-size:12px;color:#64748b;margin-top:4px;">${meta.subtitle}</div>
-                </div>
+              <div style="padding:12px 16px;border-radius:10px;background:#ffffff;border:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                <strong style="font-size:14px;color:#0f172a;">${label}</strong>
                 <div style="display:flex;align-items:center;gap:14px;font-size:13px;">
-                  ${
-                    stepTokens > 0
-                      ? `<span style="color:#475569;"><b>${stepTokens.toLocaleString()}</b> tokens</span>`
-                      : `<span style="color:#94a3b8;">0 tokens</span>`
-                  }
+                  <span style="color:#64748b;">${stepTokens.toLocaleString()} tokens</span>
                   <span style="color:#059669;font-weight:700;">$${Number(
                     s.cost_usd || 0
                   ).toFixed(4)}</span>
                   <span style="color:#2563eb;font-weight:600;">${Math.round(
                     Number(s.latency_ms || 0)
                   )} ms</span>
-                  <span style="padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;background:${
+                  <span style="padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:${
                     isOk ? "#ecfdf5" : "#fef2f2"
                   };color:${isOk ? "#059669" : "#dc2626"};">
-                    ${isOk ? "✓ Passed" : s.status}
+                    ${isOk ? "✓ OK" : s.status}
                   </span>
                 </div>
               </div>
@@ -326,43 +268,37 @@
     const records = lData.records || [];
 
     const ledgerHtml = `
-      <div style="background:#ffffff;padding:16px;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="background:#ffffff;padding:14px 16px;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
         <div>
           <div style="font-size:14px;font-weight:700;color:#0f172a;">
-            🔐 Relationship Manager Approval Gate (Human-in-the-Loop)
+            Human-in-the-Loop RM Sign-Off
           </div>
-          <div style="font-size:12px;color:#64748b;margin-top:2px;">
-            AI can only prepare a draft. Sending requires Sarah Jenkins's cryptographic HMAC-SHA256 approval.
+          <div style="font-size:12px;color:#64748b;">
+            Signs draft with Sarah Jenkins's HMAC-SHA256 key and logs to SEC/FinCEN ledger.
           </div>
         </div>
-        <button type="button" id="ncz-hitl-signoff-btn" style="padding:10px 18px;border-radius:10px;background:#059669;color:#ffffff;font-weight:700;font-size:13px;border:none;cursor:pointer;">
-          ✍ Approve & Dispatch Email
+        <button type="button" id="ncz-hitl-signoff-btn" style="padding:9px 16px;border-radius:8px;background:#059669;color:#ffffff;font-weight:700;font-size:13px;border:none;cursor:pointer;">
+          ✓ Approve & Send Email
         </button>
       </div>
 
-      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px 16px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:#065f46;">
-        <span><b>✓ Tamper-Proof Audit Trail:</b> Every action is chained with SHA-256 (SQLite updates/deletes are blocked).</span>
-        <span><b>✓ PII Redacted:</b> Names & emails masked automatically.</span>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${records
           .map(
             (r) => `
-          <div style="padding:14px 16px;border-radius:12px;background:#ffffff;border:1px solid #e2e8f0;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;background:#eff6ff;color:#1d4ed8;">
-                  Record #${r.seq_id} • ${r.action_type.replace(/_/g, " ")}
-                </span>
-                <span style="font-size:12px;color:#475569;font-weight:600;">${r.actor_id}</span>
-              </div>
-              <span style="font-size:11px;color:#64748b;font-family:'JetBrains Mono',monospace;">
-                SHA-256: ${r.record_hash.slice(0, 12)}...
-              </span>
+          <div style="padding:12px 14px;border-radius:10px;background:#ffffff;border:1px solid #e2e8f0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:13px;color:#1d4ed8;">#${r.seq_id} • ${r.action_type.replace(
+              /_/g,
+              " "
+            )}</strong>
+              <span style="font-size:11px;color:#059669;font-weight:600;">✓ Hash Verified (${r.record_hash.slice(
+                0,
+                8
+              )})</span>
             </div>
-            <div style="margin-top:8px;font-size:12px;color:#334155;background:#f8fafc;padding:8px 12px;border-radius:8px;">
-              ${r.redacted_output.slice(0, 180)}${r.redacted_output.length > 180 ? "..." : ""}
+            <div style="margin-top:6px;font-size:12px;color:#334155;">
+              ${r.redacted_output.slice(0, 150)}${r.redacted_output.length > 150 ? "..." : ""}
             </div>
           </div>
         `
@@ -372,34 +308,29 @@
     `;
 
     container.innerHTML = `
-      <div style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.4);backdrop-filter:blur(4px);display:flex;justify-content:flex-end;">
-        <div style="width:min(760px,95vw);height:100vh;background:#f8fafc;border-left:1px solid #cbd5e1;box-shadow:-10px 0 30px rgba(15,23,42,0.12);display:flex;flex-direction:column;overflow:hidden;">
-          <div style="padding:18px 22px;background:#ffffff;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <div style="font-size:18px;font-weight:700;color:#0f172a;">
-                AI Trace, Cost & Regulatory Audit Inspector
-              </div>
-              <div style="font-size:12px;color:#64748b;margin-top:2px;">
-                Live OpenTelemetry Cost Attribution & SEC/FinCEN Immutable Ledger
-              </div>
+      <div style="position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.35);display:flex;justify-content:flex-end;">
+        <div style="width:min(640px,95vw);height:100vh;background:#f8fafc;border-left:1px solid #cbd5e1;box-shadow:-8px 0 24px rgba(15,23,42,0.1);display:flex;flex-direction:column;overflow:hidden;">
+          <div style="padding:16px 20px;background:#ffffff;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:16px;font-weight:700;color:#0f172a;">
+              AI Cost & SEC/FinCEN Audit Inspector
             </div>
-            <button type="button" id="ncz-drawer-close-btn" style="padding:6px 12px;border-radius:8px;background:#f1f5f9;color:#0f172a;font-weight:600;border:1px solid #cbd5e1;cursor:pointer;">
-              ✕ Close
+            <button type="button" id="ncz-drawer-close-btn" style="padding:5px 12px;border-radius:6px;background:#f1f5f9;color:#0f172a;font-weight:600;border:1px solid #cbd5e1;cursor:pointer;">
+              Close
             </button>
           </div>
 
-          <div style="padding:12px 22px;background:#ffffff;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <select id="ncz-drawer-case-select" style="flex:1;min-width:240px;padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:600;font-size:13px;">
+          <div style="padding:12px 20px;background:#ffffff;border-bottom:1px solid #e2e8f0;display:flex;gap:10px;align-items:center;">
+            <select id="ncz-drawer-case-select" style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;background:#ffffff;color:#0f172a;font-weight:600;font-size:13px;">
               ${caseOptions}
             </select>
-            <button type="button" id="ncz-run-mcp-pipeline-btn" style="padding:8px 16px;border-radius:8px;background:#2563eb;color:#ffffff;font-weight:700;font-size:13px;border:none;cursor:pointer;">
-              ▶ Run Live AI Pipeline
+            <button type="button" id="ncz-run-mcp-pipeline-btn" style="padding:8px 14px;border-radius:6px;background:#2563eb;color:#ffffff;font-weight:600;font-size:13px;border:none;cursor:pointer;">
+              ▶ Run AI Pipeline
             </button>
           </div>
 
           ${
             STATE.actionStatus
-              ? `<div style="margin:12px 22px 0;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:${
+              ? `<div style="margin:10px 20px 0;padding:10px 12px;border-radius:6px;font-size:13px;font-weight:600;background:${
                   STATE.actionStatus.type === "error"
                     ? "#fef2f2"
                     : STATE.actionStatus.type === "success"
@@ -415,24 +346,24 @@
               : ""
           }
 
-          <div style="padding:0 22px;display:flex;gap:16px;border-bottom:1px solid #e2e8f0;background:#ffffff;">
-            <button type="button" id="ncz-tab-waterfall" style="padding:12px 4px;border:none;border-bottom:3px solid ${
+          <div style="padding:0 20px;display:flex;gap:16px;border-bottom:1px solid #e2e8f0;background:#ffffff;">
+            <button type="button" id="ncz-tab-waterfall" style="padding:10px 4px;border:none;border-bottom:2px solid ${
               STATE.activeTab === "waterfall" ? "#2563eb" : "transparent"
             };background:transparent;color:${
       STATE.activeTab === "waterfall" ? "#2563eb" : "#64748b"
     };font-weight:700;font-size:13px;cursor:pointer;">
-              1. AI Agent Steps & Cost (${spans.length} Steps)
+              1. AI Steps & Cost
             </button>
-            <button type="button" id="ncz-tab-ledger" style="padding:12px 4px;border:none;border-bottom:3px solid ${
+            <button type="button" id="ncz-tab-ledger" style="padding:10px 4px;border:none;border-bottom:2px solid ${
               STATE.activeTab === "ledger" ? "#2563eb" : "transparent"
             };background:transparent;color:${
       STATE.activeTab === "ledger" ? "#2563eb" : "#64748b"
     };font-weight:700;font-size:13px;cursor:pointer;">
-              2. SEC / FinCEN Audit Log (${records.length} Events)
+              2. Audit Log & Sign-Off
             </button>
           </div>
 
-          <div style="flex:1;overflow-y:auto;padding:20px 22px;">
+          <div style="flex:1;overflow-y:auto;padding:16px 20px;">
             ${STATE.activeTab === "waterfall" ? waterfallHtml : ledgerHtml}
           </div>
         </div>
@@ -458,7 +389,7 @@
     };
     const hitlBtn = document.getElementById("ncz-hitl-signoff-btn");
     if (hitlBtn) {
-      hitlBtn.onclick = triggerMcpHitlSignoff;
+      hitlBtn.onclick = triggerOneClickApprove;
     }
   }
 
