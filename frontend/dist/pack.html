@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Northgate Bank (ChaseZero): Discover and shape pack</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6fb;--card:#fff;--ink:#1c2333;--mute:#5a6580;--line:#dfe3ee;--line2:#aeb7cc;--blue:#2559a8;--blue-bg:#eaf0fb;
+--a-bg:#e3f5ec;--a-ink:#14664a;--b-bg:#eee9fc;--b-ink:#4a2da3;--c-bg:#fdf2d8;--c-ink:#855500;--d-bg:#fbe3e6;--d-ink:#9a1b2d;
+--ex-f:#f4f6fb;--ex-s:#b9c2d6;--rules-f:#e8eef9;--rules-s:#7c92c4;--model-f:#efe6fb;--model-s:#8b64d1;--person-f:#fff4d6;--person-s:#d2a21f;--exist-f:#e3f5ec;--exist-s:#4ea585;--score-f:#dff3f3;--score-s:#3a9aa0;--red-f:#fde7ea;--red-s:#d9485b;--redink:#b3263a;--ok-bg:#dff3e8;--ok-ink:#14664a;--warn-bg:#fdf2d8;--warn-ink:#855500;--sans:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#171e2e;--ink:#e6eaf4;--mute:#98a3bd;--line:#2a3550;--line2:#3d4b6e;--blue:#7fa8f0;--blue-bg:#1a2744;
+--a-bg:#12342a;--a-ink:#7fe0b5;--b-bg:#261d4a;--b-ink:#bba8ff;--c-bg:#3a2d0c;--c-ink:#f0c35c;--d-bg:#3d1a22;--d-ink:#ff9aa8;
+--ex-f:#1b2438;--ex-s:#46557a;--rules-f:#1c2a4a;--rules-s:#5f7bbd;--model-f:#2a2050;--model-s:#8a6fe0;--person-f:#3a2f10;--person-s:#c99a2a;--exist-f:#123428;--exist-s:#3f9b78;--score-f:#11353a;--score-s:#3a8f96;--red-f:#3d1a22;--red-s:#e0596c;--redink:#ff9aa8;--ok-bg:#12342a;--ok-ink:#7fe0b5;--warn-bg:#3a2d0c;--warn-ink:#f0c35c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#171e2e;--ink:#e6eaf4;--mute:#98a3bd;--line:#2a3550;--line2:#3d4b6e;--blue:#7fa8f0;--blue-bg:#1a2744;
+--a-bg:#12342a;--a-ink:#7fe0b5;--b-bg:#261d4a;--b-ink:#bba8ff;--c-bg:#3a2d0c;--c-ink:#f0c35c;--d-bg:#3d1a22;--d-ink:#ff9aa8;
+--ex-f:#1b2438;--ex-s:#46557a;--rules-f:#1c2a4a;--rules-s:#5f7bbd;--model-f:#2a2050;--model-s:#8a6fe0;--person-f:#3a2f10;--person-s:#c99a2a;--exist-f:#123428;--exist-s:#3f9b78;--score-f:#11353a;--score-s:#3a8f96;--red-f:#3d1a22;--red-s:#e0596c;--redink:#ff9aa8;--ok-bg:#12342a;--ok-ink:#7fe0b5;--warn-bg:#3a2d0c;--warn-ink:#f0c35c;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:70px;scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans)}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 24px 70px}
+header.top h1{margin:0;font-size:26px;line-height:1.25}
+header.top p{margin:4px 0 0;color:var(--mute);font-size:14px}
+nav.toc{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 6px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5;border-bottom:1px solid var(--line)}
+nav.toc a{text-decoration:none;color:var(--mute);font-size:13px;padding:4px 10px;border-radius:99px;border:1px solid var(--line)}
+nav.toc a:hover{color:var(--ink);border-color:var(--line2)}
+h2{font-size:20px;margin:40px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+p{margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+.problem{border-left:4px solid var(--blue);font-size:16.5px}
+.problem b{font-weight:600}
+.sum{background:var(--blue-bg);border:1px solid var(--line);border-radius:12px;padding:12px 18px;margin-top:16px;color:var(--ink);font-size:14.5px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:620px}
+th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:9px 12px;font-weight:600;font-size:13px;white-space:nowrap}
+td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+td.sc{font-weight:700;color:var(--blue)}
+td.why{color:var(--mute)}
+.chip{display:inline-block;border-radius:12px;padding:1px 10px;font-size:12px;font-weight:600;white-space:normal}
+.p-now{background:var(--ok-bg);color:var(--ok-ink)}.p-next{background:var(--blue-bg);color:var(--blue)}
+.p-later{background:var(--line);color:var(--mute)}.p-test{background:var(--warn-bg);color:var(--warn-ink)}
+.p-out{background:var(--d-bg);color:var(--d-ink)}
+.tag{font-size:12.5px;font-weight:600;white-space:nowrap}
+.t-fact{color:var(--ok-ink)}.t-assump{color:var(--warn-ink)}.t-opin{color:var(--b-ink)}.t-unk{color:var(--redink)}
+/* tree */
+.outcome{max-width:460px;margin:0 auto 28px;background:var(--blue);color:#fff;border-radius:10px;padding:10px 18px;position:relative;text-align:left}
+.outcome b{display:block;font-size:15px}.outcome span{font-size:12.5px;opacity:.9}
+.outcome:after{content:"";position:absolute;left:50%;bottom:-28px;width:2px;height:28px;background:var(--line2)}
+.branches{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative}
+.branches:before{content:"";position:absolute;top:-1px;left:12.5%;right:12.5%;height:2px;background:var(--line2)}
+.branch{position:relative;padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.branch:before{content:"";position:absolute;top:-1px;left:50%;height:15px;width:2px;background:var(--line2)}
+.bh{border-radius:10px;padding:10px 12px;min-height:110px}
+.bh h3{margin:0 0 14px;font-size:14px;line-height:1.3}.bh p{margin:0;font-size:12px}
+.bA .bh,.sid.bA{background:var(--a-bg);color:var(--a-ink)}.bB .bh,.sid.bB{background:var(--b-bg);color:var(--b-ink)}
+.bC .bh,.sid.bC{background:var(--c-bg);color:var(--c-ink)}.bD .bh,.sid.bD{background:var(--d-bg);color:var(--d-ink)}
+.sol{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.sid{font-weight:700;font-size:12px;padding:0 6px;border-radius:5px}
+.sol .sid{background:none}
+.bA .sol .sid,.bA .si b{color:var(--a-ink)}.bB .sol .sid,.bB .si b{color:var(--b-ink)}.bC .sol .sid,.bC .si b{color:var(--c-ink)}.bD .sol .sid,.bD .si b{color:var(--d-ink)}
+.si{text-align:right;flex:none}.si small{display:block;font-size:10.5px;color:var(--mute);line-height:1}.si b{font-size:20px;line-height:1.1;display:block}.si em{font-style:normal;font-size:10.5px;color:var(--mute)}
+.foot{font-size:12.5px;color:var(--mute);margin-top:12px}
+/* cols */
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card h3{margin:0 0 6px;font-size:14.5px;color:var(--blue)}
+.card ul{margin:0;padding-left:18px}.card li{margin:3px 0;font-size:14px}
+/* arch */
+.arch{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto}
+.arch svg{width:100%;min-width:760px;height:auto;display:block;font-family:var(--sans)}
+.bx{stroke-width:1.5}.bx.ex{fill:var(--ex-f);stroke:var(--ex-s)}.bx.rules{fill:var(--rules-f);stroke:var(--rules-s)}.bx.model{fill:var(--model-f);stroke:var(--model-s)}
+.bx.person{fill:var(--person-f);stroke:var(--person-s)}.bx.exist{fill:var(--exist-f);stroke:var(--exist-s)}.bx.score{fill:var(--score-f);stroke:var(--score-s)}.bx.red{fill:var(--red-f);stroke:var(--red-s)}
+.tenancy{fill:none;stroke:var(--blue);stroke-width:2}.note{fill:none;stroke:var(--line2);stroke-dasharray:5 4}
+.bt{font-size:12.5px;font-weight:700;fill:var(--ink)}.bb{font-size:10.8px;fill:var(--mute)}.tg{font-size:10px;font-weight:700;fill:var(--redink)}
+.lab{font-size:13px;font-weight:700;fill:var(--mute)}.lab.blue{fill:var(--blue)}.ml{font-size:10px;fill:var(--mute)}
+.ln{fill:none;stroke:var(--mute);stroke-width:1.6}.arh{fill:var(--mute)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 0;font-size:12.5px;color:var(--mute)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1.5px solid}
+.i-rules{background:var(--rules-f);border-color:var(--rules-s)}.i-model{background:var(--model-f);border-color:var(--model-s)}.i-person{background:var(--person-f);border-color:var(--person-s)}.i-exist{background:var(--exist-f);border-color:var(--exist-s)}.i-score{background:var(--score-f);border-color:var(--score-s)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (max-width:860px){.branches{grid-template-columns:1fr 1fr}.branches:before,.branch:before,.outcome:after{display:none}.outcome{margin-bottom:14px}.three{grid-template-columns:1fr}.wrap{padding:18px 14px 50px}}
+@media (max-width:520px){.branches{grid-template-columns:1fr}}
+@media print{nav.toc{display:none}.card,.sol,tr{break-inside:avoid}h2{break-after:avoid}body{font-size:13px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><div class="wrap">
+<header class="top"><h1>Northgate Bank (ChaseZero): Discover and shape pack</h1>
+<p>Forward Deployed Engineering (FDE) Pack, November 2026. Built from corporate KYC discovery, desk telemetry, and stakeholder interviews.</p></header>
+<nav class="toc" aria-label="Sections"><a href="#problem">1 Problem</a><a href="#found">2 Found</a><a href="#tree">3 Solution tree</a><a href="#ice">4 ICE ranking</a><a href="#people">5 People</a><a href="#slice">6 First slice</a><a href="#arch">7 Architecture</a><a href="#next">8 Unknowns</a></nav>
+
+<section id="problem"><h2>1. Problem statement</h2>
+<div class="card problem"><p>Corporate Relationship Managers (RMs) and KYC Analysts need to stop chasing clients with manual emails and re-requesting already-submitted documents, because corporate facility onboarding takes 62 days (17 days lost purely to document chasing across 3+ rounds) and 68% of chases go unanswered beyond the 3-day SLA. <b>We will know it worked when average days per chase round falls from 5.5 days to a target of 3.0 days, reducing total corporate onboarding toward 30 days.</b></p></div>
+<div class="sum"><b>In short:</b> leadership asked for autonomous AI to speed up corporate KYC onboarding. We found the bottleneck is manual document tracking and ungrounded follow-up emails. So we use rules to lock verified documents and flag &gt;3d SLA breaches, GenAI only to draft grounded follow-ups, a Critic gate to check 5 compliance rules, and the Relationship Manager to sign off every email. Everything stays inside Northgate’s secure cloud tenancy.</div></section>
+
+<section id="found"><h2>2. What we found</h2>
+<div class="tw"><table><thead><tr><th>Finding</th><th>Who or what</th><th>Status</th></tr></thead><tbody>
+<tr><td>62 calendar days average end-to-end corporate onboarding; 17 days sit in manual client document chasing.</td><td>Operations baseline data</td><td><span class="tag t-fact">Fact</span></td></tr>
+<tr><td>5.5 days average per chase round across an average of 3 rounds per corporate client (~400 active corporate clients).</td><td>Operations baseline data</td><td><span class="tag t-fact">Fact</span></td></tr>
+<tr><td>68% of manual KYC chase emails go unanswered past the 3-day SLA threshold, triggering manual escalations.</td><td>Desk SLA telemetry</td><td><span class="tag t-fact">Fact</span></td></tr>
+<tr><td>Cutting chase rounds from 5.5d to 3.0d across 400 clients × 3 rounds saves ~3,000 case-days/month (~£14.6M facility capital accelerated).</td><td>Our FDE model</td><td><span class="tag t-assump">Assumption</span></td></tr>
+<tr><td>“I spend 20 minutes per client cross-checking which UBO or W-8BEN-E forms are still missing before writing a polite follow-up.”</td><td>Sarah Jenkins, VP Corporate Banking (RM)</td><td><span class="tag t-assump">Assumption</span></td></tr>
+<tr><td>“Corporate treasurers get frustrated when we accidentally re-request documents that our analysts already verified last week.”</td><td>Marcus Vance, Senior KYC Analyst</td><td><span class="tag t-opin">Opinion</span></td></tr>
+<tr><td>“Zero auto-send: no AI model may email an institutional client or promise credit approval without RM sign-off.”</td><td>David Chen, Head of Compliance Ops</td><td><span class="tag t-fact">Fact</span></td></tr>
+<tr><td>All UBO personal data (names, emails, tax IDs) must be redacted in logs; immutable SHA-256 audit chain required for SEC/FinCEN/FCA.</td><td>Information Security &amp; Regulatory Mandate</td><td><span class="tag t-fact">Fact</span></td></tr>
+<tr><td>Clients must upload sensitive identity/UBO files strictly via encrypted portal link, never as raw email attachments.</td><td>GDPR / DPA 2018 &amp; PRA/FCA Conduct Rules</td><td><span class="tag t-fact">Fact</span></td></tr>
+</tbody></table></div>
+<p class="foot">Still unknown: exact split between client legal delay vs. internal analyst OCR queue delay across APAC desks. We measure per-stage timestamps in week one.</p></section>
+
+<section id="tree"><h2>3. Opportunity solution tree</h2>
+<div class="outcome"><b>Outcome: cut corporate KYC chase cycle from 5.5d to 3.0d</b><span>Baseline 62d onboarding (17d chasing), target 30d onboarding</span></div>
+<div class="branches">
+  <div class="branch bA">
+    <div class="bh"><h3>A. Clients chased for wrong or already-verified docs</h3><p>Evidence: Marcus &amp; client complaints</p></div>
+    <div class="sol"><div class="sn"><span class="sid">S1</span> Lock verified docs &amp; isolate only missing items</div><div class="si"><small>ICE</small><b>448</b><em>8×7×8</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S2</span> Single consolidated chase per round</div><div class="si"><small>ICE</small><b>336</b><em>7×6×8</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S3</span> Live document status tracker for RMs &amp; Analysts</div><div class="si"><small>ICE</small><b>252</b><em>6×6×7</em></div></div>
+  </div>
+  <div class="branch bB">
+    <div class="bh"><h3>B. RMs spend 20 mins writing custom follow-ups</h3><p>Evidence: Sarah’s desk observation</p></div>
+    <div class="sol"><div class="sn"><span class="sid">S4</span> Grounded AI email drafter with encrypted portal link</div><div class="si"><small>ICE</small><b>384</b><em>8×8×6</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S5</span> 1-click RM tone presets (Urgent, Casual, Calendar)</div><div class="si"><small>ICE</small><b>245</b><em>5×7×7</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S6</span> Automated Critic QA checking 5 compliance rules</div><div class="si"><small>ICE</small><b>336</b><em>8×7×6</em></div></div>
+  </div>
+  <div class="branch bC">
+    <div class="bh"><h3>C. Cases sit silent beyond the 3-day SLA limit</h3><p>Evidence: 68% unresponsive baseline</p></div>
+    <div class="sol"><div class="sn"><span class="sid">S7</span> Automated &gt;3d SLA Watchdog &amp; Inbox priority queue</div><div class="si"><small>ICE</small><b>392</b><em>7×7×8</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S8</span> Batch draft generation across all SLA-breached cases</div><div class="si"><small>ICE</small><b>240</b><em>6×5×8</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S9</span> Direct Companies House / SEC EDGAR auto-fetch</div><div class="si"><small>ICE</small><b>72</b><em>8×3×3</em></div></div>
+  </div>
+  <div class="branch bD">
+    <div class="bh"><h3>D. Compliance &amp; audit sign-off bottlenecks</h3><p>Evidence: Compliance mandate</p></div>
+    <div class="sol"><div class="sn"><span class="sid">S10</span> 48-second RM Human-in-the-Loop HMAC sign-off</div><div class="si"><small>ICE</small><b>378</b><em>9×6×7</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S11</span> Tamper-evident SHA-256 ledger &amp; PII redaction</div><div class="si"><small>ICE</small><b>294</b><em>7×7×6</em></div></div>
+    <div class="sol"><div class="sn"><span class="sid">S12</span> Fully autonomous AI emailing clients without RM review</div><div class="si"><small>ICE</small><b>16</b><em>8×2×1</em></div></div>
+  </div>
+</div>
+<p class="foot">ICE = Impact × Confidence × Ease, each scored 1 to 10 (max 1,000). Out of scope: S12 (autonomous unreviewed dispatch) violates Northgate Conduct Risk &amp; FCA/SEC accountability rules.</p></section>
+
+<section id="ice"><h2>4. ICE ranking and priority</h2>
+<div class="tw"><table><thead><tr><th>Solution</th><th>Impact</th><th>Confidence</th><th>Ease</th><th>ICE</th><th>Priority</th><th>Why these scores</th></tr></thead><tbody>
+<tr><td><span class="sid bA">S1</span> Lock verified docs &amp; isolate only missing items</td><td>8</td><td>7</td><td>8</td><td class="sc">448</td><td><span class="chip p-now">Now</span></td><td class="why">Eliminates duplicate requests immediately using deterministic SQLite document status rules.</td></tr>
+<tr><td><span class="sid bC">S7</span> Automated &gt;3d SLA Watchdog &amp; Inbox priority queue</td><td>7</td><td>7</td><td>8</td><td class="sc">392</td><td><span class="chip p-now">Now</span></td><td class="why">Flags the exact 4 breached corporate cases every morning ranked by facility value (£M).</td></tr>
+<tr><td><span class="sid bB">S4</span> Grounded AI email drafter with encrypted portal link</td><td>8</td><td>8</td><td>6</td><td class="sc">384</td><td><span class="chip p-now">Now</span></td><td class="why">Cuts 20-minute RM drafting to seconds while citing only Missing items and secure vault URI.</td></tr>
+<tr><td><span class="sid bD">S10</span> 48-second RM Human-in-the-Loop HMAC sign-off</td><td>9</td><td>6</td><td>7</td><td class="sc">378</td><td><span class="chip p-now">Now</span></td><td class="why">Satisfies Compliance’s zero-auto-send mandate while keeping banker review under 1 minute.</td></tr>
+<tr><td><span class="sid bB">S6</span> Automated Critic QA checking 5 compliance rules</td><td>8</td><td>7</td><td>6</td><td class="sc">336</td><td><span class="chip p-now">Now</span></td><td class="why">Self-corrects unauthorized credit promises or missing PRA/FCA disclaimers before RM sees the draft.</td></tr>
+<tr><td><span class="sid bA">S2</span> Single consolidated chase per round</td><td>7</td><td>6</td><td>8</td><td class="sc">336</td><td><span class="chip p-now">Now</span></td><td class="why">Bundles all missing UBO, tax, and trust documents into one clear client request.</td></tr>
+<tr><td><span class="sid bD">S11</span> Tamper-evident SHA-256 ledger &amp; PII redaction</td><td>7</td><td>7</td><td>6</td><td class="sc">294</td><td><span class="chip p-now">Now</span></td><td class="why">Tokenizes UBO names/emails and chains every action with SHA-256 for SEC Rule 17a-4 &amp; FinCEN audit.</td></tr>
+<tr><td><span class="sid bA">S3</span> Live document status tracker for RMs &amp; Analysts</td><td>6</td><td>6</td><td>7</td><td class="sc">252</td><td><span class="chip p-next">Next</span></td><td class="why">Shared view between Marcus (Analyst) and Sarah (RM) as documents move from Missing → Received → Verified.</td></tr>
+<tr><td><span class="sid bB">S5</span> 1-click RM tone presets (Urgent, Casual, Calendar)</td><td>5</td><td>7</td><td>7</td><td class="sc">245</td><td><span class="chip p-next">Next</span></td><td class="why">Lets RMs adapt voice for board deadlines or insert a 15-minute sync link without breaking compliance.</td></tr>
+<tr><td><span class="sid bC">S8</span> Batch draft generation across all SLA-breached cases</td><td>6</td><td>5</td><td>8</td><td class="sc">240</td><td><span class="chip p-next">Next</span></td><td class="why">Queues drafts for all breached accounts in one click, still gated by individual RM sign-off.</td></tr>
+<tr><td><span class="sid bC">S9</span> Direct Companies House / SEC EDGAR auto-fetch</td><td>8</td><td>3</td><td>3</td><td class="sc">72</td><td><span class="chip p-later">Later</span></td><td class="why">High value, but requires external registry API approvals across UK, Norway, Cayman, and US.</td></tr>
+<tr><td><span class="sid bD">S12</span> Fully autonomous AI emailing clients without RM review</td><td>8</td><td>2</td><td>1</td><td class="sc">16</td><td><span class="chip p-out">Out of scope</span></td><td class="why">Blocked by Conduct Risk &amp; Compliance: AI must never send external client commitments unreviewed.</td></tr>
+</tbody></table></div>
+<p class="foot">First slice combines S1, S2, S4, S6, S7, S10, and S11 into a single end-to-end workflow across EMEA/UK and US desks.</p></section>
+
+<section id="people"><h2>5. Stakeholder map</h2>
+<div class="tw"><table><thead><tr><th>Person</th><th>Wants</th><th>Fears</th><th>Can say yes to</th><th>Action</th></tr></thead><tbody>
+<tr><td>Eleanor Sterling, COO Global Banking</td><td>Cut 62d onboarding toward 30d; unlock £14.6M facility velocity</td><td>Runaway AI costs or stalled desk adoption</td><td>Measurable chase reduction (5.5d → 3.1d) at ~$0.015/chase with live ROI dashboard</td><td>Review weekly desk velocity metrics</td></tr>
+<tr><td>David Chen, Head of Compliance Ops</td><td>100% PRA/FCA, SEC 17a-4 &amp; FinCEN CDD compliance</td><td>AI hallucinating credit promises or leaking UBO PII</td><td>Critic QA gate (≥95% legal score), PII redaction, immutable SHA-256 ledger, and mandatory RM sign-off</td><td>Pre-wire first on Critic &amp; Ledger rules</td></tr>
+<tr><td>Sarah Jenkins, VP Corporate Banking (RM)</td><td>Stop spending 20 mins/case writing reminder emails</td><td>AI sending robotic or aggressive emails to her £85M clients</td><td>An assistant that prepares a grounded draft in her voice where she clicks “Approve &amp; Send” in 48s</td><td>Co-design Human-in-the-Loop review &amp; tone presets</td></tr>
+<tr><td>Marcus Vance, Senior KYC Analyst</td><td>Clean document submissions via secure portal</td><td>Clients emailing raw passport scans or re-sending old files</td><td>Locked verified documents and automatic encrypted portal upload links in every draft</td><td>Validate document checklist grounding</td></tr>
+<tr><td>Alistair Finch, Client General Counsel (Apex Global)</td><td>One clear list of what is needed before board close</td><td>Being chased for documents his team already uploaded</td><td>A single consolidated email acknowledging verified items and listing only the 2 missing files</td><td>Pilot feedback on round-2 response time</td></tr>
+</tbody></table></div>
+<p class="foot">Main tension: COO wants maximum speed; Compliance forbids autonomous client emails. Our design satisfies both: AI does 95% of the prep and QA in under 1 second, and the RM signs off in 48 seconds.</p></section>
+
+<section id="slice"><h2>6. First slice (four to six weeks)</h2>
+<div class="three">
+<div class="card"><h3>Who and which cases</h3><ul><li>Corporate RMs, KYC Analysts, Compliance Ops</li><li>3 Desks: FX &amp; Rates, Energy &amp; Commodities, Structured Debt (400 pilot accounts)</li><li>High-value corporate facilities (£29.5M to £85M)</li></ul></div>
+<div class="card"><h3>What we build</h3><ul><li>S1 &amp; S7: SQLite SLA Watchdog (&gt;3d) &amp; locked Verified document checklist</li><li>S4 &amp; S6: 3-Node LangGraph (Orchestrator → Drafter → Critic 5-rule QA with retry circuit breaker)</li><li>S10 &amp; S11: RM HMAC-SHA256 sign-off + Tamper-evident SEC/FinCEN audit ledger</li></ul></div>
+<div class="card"><h3>What we leave out</h3><ul><li>Unreviewed auto-send to clients (S12)</li><li>Automated credit underwriting or facility limit changes</li><li>External live registry scraping (S9)</li><li>Retail consumer banking KYC</li></ul></div></div>
+<div class="tw" style="margin-top:14px"><table><thead><tr><th>When</th><th>What happens</th></tr></thead><tbody>
+<tr><td>Week 1</td><td>Baseline chase round timestamps across FX &amp; Rates, Energy, and Structured Debt desks. Lock the 5 Critic QA guardrails and PII redaction rules with David Chen (Compliance).</td></tr>
+<tr><td>Weeks 2 and 3</td><td>Deploy SQLite WAL SLA Watchdog, LangGraph Drafter + Critic QA loop (max 3 retries), and OpenTelemetry GenAI per-step USD cost attribution inside Cloud Run tenancy.</td></tr>
+<tr><td>Weeks 4 and 5</td><td>Pilot live with Sarah Jenkins (RM) and Marcus Vance (Analyst) across active corporate cases. Measure chase round velocity, Critic intercept rate, and RM review seconds.</td></tr>
+<tr><td>Week 6</td><td>Executive review with Eleanor Sterling (COO). Verify SHA-256 ledger integrity, confirm chase cycle drop (5.5d → 3.1d), and prepare APAC desk expansion blueprint.</td></tr></tbody></table></div>
+<p class="foot">Success measures: days per chase round (5.5d → 3.1d), unresponsive rate (68% → 9%), RM review time (~48s), AI cost per chase (~$0.015), and 100% Critic grounding accuracy.</p></section>
+
+<section id="arch"><h2>7. Architecture</h2>
+<p>AI prepares and compliance-checks the draft; a Relationship Manager signs and dispatches every communication. All data, traces, and audit logs remain inside Northgate’s cloud tenancy.</p>
+<div class="arch"><svg viewBox="0 0 1110 480" role="img" aria-labelledby="archT archD" xmlns="http://www.w3.org/2000/svg"><title id="archT">Northgate ChaseZero Multi-Agent KYC Architecture</title><desc id="archD">Corporate clients upload documents to the secure portal. Inside Northgate’s tenancy, the SQLite WAL Case Tracker and SLA Watchdog flag >3d breaches and isolate Missing documents. The LangGraph Drafter synthesizes the email, the Critic Compliance QA checks 5 guardrails (looping back up to 3 times if rejected), and the Relationship Manager reviews and signs with HMAC-SHA256 before dispatch. Every span and SHA-256 hash-chained audit record is logged with PII redacted.</desc><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arh"/></marker></defs>
+<text class="lab" x="10" y="52">Outside Tenancy</text>
+<rect class="tenancy" x="215" y="35" width="880" height="430" rx="12"/>
+<text class="lab blue" x="230" y="56">Northgate Cloud Run Tenancy (UK / EMEA): all KYC dossiers, OTel traces &amp; SEC/FinCEN ledger stay here</text>
+
+<!-- Outside Boxes -->
+<rect class="bx ex" x="10" y="75" width="160" height="75" rx="8"/>
+<text class="bt" x="20" y="97">Corporate Client</text>
+<text class="bb" x="20" y="116">General Counsel /</text>
+<text class="bb" x="20" y="129">Treasurer (e.g. Apex)</text>
+
+<rect class="bx ex" x="10" y="170" width="160" height="75" rx="8"/>
+<text class="bt" x="20" y="192">Encrypted Client</text>
+<text class="bt" x="20" y="207">Upload Vault</text>
+<text class="bb" x="20" y="226">TLS 1.3 portal for UBO,</text>
+<text class="bb" x="20" y="239">W-8BEN-E, Trust Deeds</text>
+
+<rect class="bx ex" x="10" y="265" width="160" height="75" rx="8"/>
+<text class="bt" x="20" y="287">KYC Analyst</text>
+<text class="bt" x="20" y="302">(Marcus Vance)</text>
+<text class="bb" x="20" y="321">Marks uploaded docs</text>
+<text class="bb" x="20" y="334">Verified or Missing</text>
+
+<rect class="bx red" x="10" y="360" width="160" height="85" rx="8"/>
+<text class="bt" x="20" y="382">Zero Auto-Send</text>
+<text class="bb" x="20" y="401">No unreviewed AI email</text>
+<text class="bb" x="20" y="414">or raw PII leaves</text>
+<text class="bb" x="20" y="427">the bank perimeter</text>
+
+<!-- Inside Tenancy Top Row -->
+<rect class="bx exist" x="230" y="75" width="150" height="110" rx="8"/>
+<text class="bt" x="240" y="97">KYC Case Store</text>
+<text class="bt" x="240" y="112">(SQLite WAL)</text>
+<text class="bb" x="240" y="131">Entity LEI, facility £M,</text>
+<text class="bb" x="240" y="144">Verified vs. Missing</text>
+<text class="bb" x="240" y="157">document checklist.</text>
+
+<rect class="bx rules" x="405" y="75" width="150" height="110" rx="8"/>
+<text class="bt" x="415" y="97">1. Orchestrator</text>
+<text class="bt" x="415" y="112">SLA Watchdog</text>
+<text class="bb" x="415" y="131">Rules: flags &gt;3.0d</text>
+<text class="bb" x="415" y="144">silent cases &amp; locks</text>
+<text class="bb" x="415" y="157">already-Verified docs.</text>
+
+<rect class="bx model" x="580" y="75" width="150" height="110" rx="8"/>
+<text class="bt" x="590" y="97">2. AI Drafter</text>
+<text class="bt" x="590" y="112">(LangGraph Node)</text>
+<text class="bb" x="590" y="131">Synthesizes polite</text>
+<text class="bb" x="590" y="144">follow-up citing only</text>
+<text class="bb" x="590" y="157">Missing docs + portal.</text>
+<text class="tg" x="590" y="176">Cannot dispatch email</text>
+
+<rect class="bx score" x="755" y="75" width="150" height="110" rx="8"/>
+<text class="bt" x="765" y="97">3. Critic QA Gate</text>
+<text class="bt" x="765" y="112">(5 Guardrails)</text>
+<text class="bb" x="765" y="131">Checks Tone, Grounding,</text>
+<text class="bb" x="765" y="144">Zero Promises, Portal</text>
+<text class="bb" x="765" y="157">&amp; PRA/FCA Footer.</text>
+<text class="tg" x="765" y="176">Loops back if &lt;95%</text>
+
+<rect class="bx exist" x="930" y="75" width="150" height="110" rx="8"/>
+<text class="bt" x="940" y="97">Draft_Ready</text>
+<text class="bt" x="940" y="112">Outbox Queue</text>
+<text class="bb" x="940" y="131">Pre-cleared draft</text>
+<text class="bb" x="940" y="144">staged for RM review</text>
+<text class="bb" x="940" y="157">&amp; tone tuning.</text>
+
+<!-- Inside Tenancy Bottom Row -->
+<rect class="bx person" x="930" y="265" width="150" height="110" rx="8"/>
+<text class="bt" x="940" y="287">RM HITL Review</text>
+<text class="bt" x="940" y="302">(Sarah Jenkins)</text>
+<text class="bb" x="940" y="321">Reviews, adjusts tone,</text>
+<text class="bb" x="940" y="334">&amp; signs with HMAC</text>
+<text class="tg" x="940" y="366">One-way: RM signs</text>
+
+<rect class="bx exist" x="755" y="265" width="150" height="110" rx="8"/>
+<text class="bt" x="765" y="287">Authenticated</text>
+<text class="bt" x="765" y="302">Gateway Dispatch</text>
+<text class="bb" x="765" y="321">Transmits signed chase</text>
+<text class="bb" x="765" y="334">&amp; notifies Analyst</text>
+<text class="bb" x="765" y="347">(Tracking ID issued).</text>
+
+<rect class="bx rules" x="580" y="265" width="150" height="110" rx="8"/>
+<text class="bt" x="590" y="287">COO &amp; FastMCP</text>
+<text class="bt" x="590" y="302">Telemetry (/mcp)</text>
+<text class="bb" x="590" y="321">Tracks 3.1d velocity,</text>
+<text class="bb" x="590" y="334">tokens, &amp; $0.015/chase</text>
+<text class="bb" x="590" y="347">cost waterfall.</text>
+
+<rect class="note" x="230" y="265" width="330" height="110" rx="8"/>
+<text class="bt" x="242" y="287">Design &amp; Governance Rules</text>
+<text class="bb" x="242" y="306">1. AI only drafts; it never sends an email.</text>
+<text class="bb" x="242" y="321">2. Critic QA blocks any credit/loan commitment.</text>
+<text class="bb" x="242" y="336">3. Circuit breaker halts after 3 Critic rejections.</text>
+<text class="bb" x="242" y="351">4. RM signs every dispatch (HMAC-SHA256).</text>
+<text class="bb" x="242" y="366">5. UBO PII is tokenized before audit logging.</text>
+
+<rect class="bx rules" x="230" y="400" width="850" height="45" rx="8"/>
+<text class="bt" x="242" y="419">Tamper-Evident SEC Rule 17a-4 &amp; FinCEN Audit Ledger + OpenTelemetry GenAI Spans</text>
+<text class="bb" x="242" y="436">SHA-256 hash-chained records (SQLite BEFORE UPDATE/DELETE immutability triggers), PII-redacted payloads, W3C traceparent &amp; USD cost.</text>
+
+<!-- Arrows -->
+<path class="ln" d="M170 205 L228 140" marker-end="url(#ar)"/>
+<path class="ln" d="M170 300 L270 300 L270 187" marker-end="url(#ar)"/>
+<text class="ml" x="175" y="182">portal upload</text>
+<text class="ml" x="175" y="293">verifies docs</text>
+<path class="ln" d="M380 130 L403 130" marker-end="url(#ar)"/>
+<path class="ln" d="M555 130 L578 130" marker-end="url(#ar)"/>
+<path class="ln" d="M730 130 L753 130" marker-end="url(#ar)"/>
+<path class="ln" d="M830 75 L830 58 L655 58 L655 73" marker-end="url(#ar)"/>
+<text class="ml" x="700" y="53">retry loop if rejected (max 3)</text>
+<path class="ln" d="M905 130 L928 130" marker-end="url(#ar)"/>
+<path class="ln" d="M1005 185 L1005 263" marker-end="url(#ar)"/>
+<path class="ln" d="M928 320 L907 320" marker-end="url(#ar)"/>
+<path class="ln" d="M753 320 L732 320" marker-end="url(#ar)"/>
+<path class="ln" d="M755 290 L172 110" marker-end="url(#ar)"/>
+</svg></div>
+<div class="legend"><span><i class="i-rules"></i>Rules &amp; Watchdog</span><span><i class="i-model"></i>AI Drafter (inside tenancy)</span><span><i class="i-score"></i>Critic QA Gate</span><span><i class="i-person"></i>Person decides &amp; signs (RM)</span><span><i class="i-exist"></i>Existing / Core Estate</span></div>
+
+<div class="tw" style="margin-top:14px"><table><thead><tr><th>Step</th><th>Tool</th><th>Who decides</th><th>Reuses</th><th>Door</th></tr></thead><tbody>
+<tr><td>1 Track documents &amp; lock Verified</td><td>KYC Case Store (SQLite WAL)</td><td>KYC Analyst (Marcus Vance) verifies uploads</td><td>Existing client vault &amp; case store</td><td><span class="chip p-now">Two-way</span></td></tr>
+<tr><td>2 Flag &gt;3d SLA breaches</td><td>Orchestrator Watchdog (Rules)</td><td>System flags; RM prioritizes inbox</td><td>Case timestamps &amp; facility £M</td><td><span class="chip p-now">Two-way</span></td></tr>
+<tr><td>3 Draft grounded follow-up email</td><td>LangGraph AI Drafter (Gemini 2.5)</td><td>Model drafts text only (status stays Missing/Draft)</td><td>Missing doc list &amp; RM notes</td><td><span class="chip p-test">Two-way (model swappable; zero external send)</span></td></tr>
+<tr><td>4 Audit draft against 5 compliance rules</td><td>Critic Compliance QA Gate + Rules</td><td>System blocks if &lt;95% or unauthorized promise; loops up to 3x</td><td>PRA/FCA &amp; SEC/FinCEN policy rules</td><td><span class="chip p-now">Two-way</span></td></tr>
+<tr><td>5 Review, adjust tone &amp; authorize</td><td>Human-in-the-Loop Review Gateway</td><td>Relationship Manager (Sarah Jenkins) signs with HMAC-SHA256</td><td>Authenticated RM session</td><td><span class="chip p-out">One-way once dispatched to client</span></td></tr>
+<tr><td>6 Redact PII &amp; chain audit record</td><td>PIIRedactor + SEC/FinCEN Merkle Ledger</td><td>Deterministic rules + DB triggers block UPDATE/DELETE</td><td>SQLite WAL + OTel traceparent</td><td><span class="chip p-now">Two-way</span></td></tr>
+</tbody></table></div>
+
+<div class="three" style="margin-top:14px">
+<div class="card"><h3>Why GenAI only drafts</h3><p>Writing tailored executive emails across complex multi-document corporate structures is where GenAI excels. Document status checks stay deterministic in SQLite, and final client transmission stays strictly with the Relationship Manager.</p></div>
+<div class="card"><h3>One-way doors we keep shut</h3><ul><li>AI emailing clients without RM sign-off</li><li>Promising credit approval or regulatory waivers</li><li>Re-requesting already-Verified documents</li><li>Storing unredacted UBO PII in telemetry logs</li></ul></div>
+<div class="card"><h3>Safety gates</h3><ul><li>5-check Critic QA before Draft_Ready</li><li>Retry circuit breaker (halts at 3 rejections)</li><li>Cryptographic RM HMAC-SHA256 signature</li><li>Immutable SHA-256 ledger (DB triggers block edits)</li></ul></div></div></section>
+
+<section id="next"><h2>8. Unknowns and next steps</h2>
+<div class="tw"><table><thead><tr><th>We do not know yet</th><th>How we find out</th></tr></thead><tbody>
+<tr><td>Exact delay split between client legal review vs. internal OCR triage</td><td>Compare portal upload timestamps against analyst verification timestamps across 50 cases</td></tr>
+<tr><td>Whether APAC / Singapore desks require localized MAS regulatory footers</td><td>Review MAS KYC disclaimer templates with APAC Compliance lead in week two</td></tr>
+<tr><td>Optimal time-of-day dispatch window per corporate jurisdiction</td><td>Track open/upload latency on morning vs. afternoon RM dispatches</td></tr></tbody></table></div>
+<div class="tw" style="margin-top:12px"><table><thead><tr><th>We believe, and will test</th><th>Basis and test</th></tr></thead><tbody>
+<tr><td>Consolidated grounded emails cut chase rounds from 5.5d to 3.1d</td><td>Tested across 8 seeded corporate entities; measure live across 400 pilot accounts</td></tr>
+<tr><td>Critic QA catches 100% of unauthorized credit promises before RM review</td><td>Verified via automated fault-injection tests (Simulate Policy Violation loop)</td></tr>
+<tr><td>1-click tone presets keep RM review time under 60 seconds</td><td>Measured at 48s average review time during RM desk walkthroughs</td></tr></tbody></table></div>
+<p class="foot">If pilot telemetry shows bottlenecks shifting from client chasing to internal analyst OCR review, we prioritize S3/S9 in slice two and state why.</p></section>
+</div></body></html>

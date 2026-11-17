@@ -878,6 +878,16 @@ if FRONTEND_ASSETS.exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_ASSETS)), name="assets")
 
 
+@app.get("/pack", include_in_schema=False)
+async def serve_discover_shape_pack() -> FileResponse:
+    pack_file = Path(__file__).resolve().parent.parent / "northgate-discover-shape-pack.html"
+    dist_pack = FRONTEND_DIST / "pack.html"
+    target = pack_file if pack_file.exists() else dist_pack
+    if target.exists():
+        return FileResponse(str(target))
+    raise HTTPException(status_code=404, detail="Discover and shape pack not found")
+
+
 @app.get("/", include_in_schema=False)
 @app.get("/login", include_in_schema=False)
 async def serve_spa_root() -> FileResponse:
