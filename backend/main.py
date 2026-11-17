@@ -157,6 +157,105 @@ async def fastmcp_streamable_http_endpoint(request: Request) -> JSONResponse:
 
 
 # ==============================================================================
+# Operator Authentication Endpoints (/api/auth/login, /api/auth/me, /api/auth/logout)
+# ==============================================================================
+
+DEMO_ROLES_DIRECTORY: Dict[str, Dict[str, str]] = {
+    "rm": {
+        "role": "RM",
+        "email": "rm@northgate.demo",
+        "name": "Sarah Jenkins",
+        "initials": "SJ",
+        "title": "VP Corporate Banking",
+        "default_view": "orchestrator-inbox",
+    },
+    "analyst": {
+        "role": "ANALYST",
+        "email": "analyst@northgate.demo",
+        "name": "Marcus Vance",
+        "initials": "MV",
+        "title": "Senior KYC Analyst",
+        "default_view": "case-tracker",
+    },
+    "coo": {
+        "role": "COO",
+        "email": "coo@northgate.demo",
+        "name": "Eleanor Sterling",
+        "initials": "ES",
+        "title": "COO Global Banking",
+        "default_view": "executive-success-dashboard",
+    },
+    "admin": {
+        "role": "ADMIN",
+        "email": "admin@northgate.demo",
+        "name": "David Chen",
+        "initials": "DC",
+        "title": "Head of Compliance Ops",
+        "default_view": "critic-compliance-qa",
+    },
+}
+
+
+@app.post("/api/auth/login", summary="Operator Workspace Sign-In")
+async def operator_login(request: Request) -> JSONResponse:
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    email = str(payload.get("email") or "rm@northgate.demo").strip().lower()
+    role_key = str(payload.get("role") or "").strip().lower()
+
+    matched = None
+    if role_key in DEMO_ROLES_DIRECTORY:
+        matched = DEMO_ROLES_DIRECTORY[role_key]
+    else:
+        for k, profile in DEMO_ROLES_DIRECTORY.items():
+            if profile["email"].lower() == email or email.startswith(k):
+                matched = profile
+                break
+
+    if not matched:
+        prefix = email.split("@")[0].replace(".", " ").title() or "Sarah Jenkins"
+        parts = prefix.split()
+        initials = (
+            f"{parts[0][0]}{parts[1][0]}".upper()
+            if len(parts) >= 2
+            else prefix[:2].upper()
+        )
+        matched = {
+            "role": "RM",
+            "email": email,
+            "name": prefix,
+            "initials": initials,
+            "title": "VP Corporate Banking",
+            "default_view": "orchestrator-inbox",
+        }
+
+    set_execution_context(
+        actor_id=f"{matched['name']} ({matched['title']})",
+        actor_role="RM_APPROVER",
+        entry_channel="WEB_CONSOLE",
+    )
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "authenticated": True,
+            "session_duration_hours": 8,
+            "expires_in": 28800,
+            "token": f"ncz-session-{matched['role'].lower()}-2026",
+            "operator": matched,
+        },
+    )
+
+
+@app.post("/api/auth/logout", summary="Operator Workspace Sign-Out")
+async def operator_logout() -> Dict[str, Any]:
+    return {"authenticated": False, "message": "Operator session terminated."}
+
+
+# ==============================================================================
 # Observability, Trace Waterfall & Tamper-Evident Audit Ledger Endpoints
 # ==============================================================================
 

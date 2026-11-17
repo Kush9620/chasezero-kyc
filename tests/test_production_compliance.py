@@ -344,3 +344,23 @@ async def test_6_all_ui_buttons_and_interactive_endpoints():
 
         # Leave case 1 in clean demo state
         await client.post("/api/cases/1/reset")
+
+        # 7. Test Operator Login & Role Switching (RM, ANALYST, COO, ADMIN)
+        for role_key, expected_email in (
+            ("RM", "rm@northgate.demo"),
+            ("ANALYST", "analyst@northgate.demo"),
+            ("COO", "coo@northgate.demo"),
+            ("ADMIN", "admin@northgate.demo"),
+        ):
+            r_login = await client.post(
+                "/api/auth/login",
+                json={"email": expected_email, "password": "demo", "role": role_key},
+            )
+            assert r_login.status_code == 200
+            login_data = r_login.json()
+            assert login_data["authenticated"] is True
+            assert login_data["operator"]["role"] == role_key
+
+        r_logout = await client.post("/api/auth/logout")
+        assert r_logout.status_code == 200
+        assert r_logout.json()["authenticated"] is False
