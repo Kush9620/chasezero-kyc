@@ -91,13 +91,13 @@
       roleBtns.forEach((b) => {
         const r = b.getAttribute("data-role");
         if (r === activeRole) {
-          b.style.border = "1px solid #a78bfa";
-          b.style.background = "rgba(167,139,250,0.18)";
-          b.style.color = "#ffffff";
+          b.style.border = "1px solid #2563eb";
+          b.style.background = "#eff6ff";
+          b.style.color = "#1d4ed8";
         } else {
-          b.style.border = "1px solid rgba(255,255,255,0.12)";
-          b.style.background = "#171426";
-          b.style.color = "#94a3b8";
+          b.style.border = "1px solid #cbd5e1";
+          b.style.background = "#f8fafc";
+          b.style.color = "#475569";
         }
       });
     }

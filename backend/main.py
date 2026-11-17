@@ -879,8 +879,16 @@ if FRONTEND_ASSETS.exists():
 
 
 @app.get("/", include_in_schema=False)
+@app.get("/login", include_in_schema=False)
 async def serve_spa_root() -> FileResponse:
     index_file = FRONTEND_DIST / "index.html"
     if index_file.exists():
-        return FileResponse(str(index_file))
+        return FileResponse(
+            str(index_file),
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
     raise HTTPException(status_code=404, detail="Frontend dist not found")
